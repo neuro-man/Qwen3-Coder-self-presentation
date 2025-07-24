@@ -1,0 +1,1802 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Модель Qwen3-Coder - Анализ возможностей</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --chakra-blue: #3182ce;
+            --chakra-teal: #319795;
+            --chakra-green: #38a169;
+            --chakra-yellow: #d69e2e;
+            --chakra-orange: #dd6b20;
+            --chakra-purple: #805ad5;
+            --chakra-pink: #d53f8c;
+            --bg-primary: #f8f9fa;
+            --text-primary: #2d3748;
+            --text-secondary: #4a5568;
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        header {
+            text-align: center;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, var(--chakra-blue), var(--chakra-teal));
+            color: white;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            box-shadow: var(--card-shadow);
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .icon-wrapper {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-size: 1.5rem;
+            color: var(--text-primary);
+            background-color: transparent;
+        }
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+        .card-content {
+            color: var(--text-secondary);
+            flex-grow: 1;
+        }
+        .card-content h3 {
+            margin: 20px 0 10px;
+            color: var(--text-primary);
+            font-size: 1.2rem;
+        }
+        .card-content ul {
+            padding-left: 20px;
+            margin: 15px 0;
+        }
+        .card-content li {
+            margin-bottom: 8px;
+        }
+        .image-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .model-image {
+            max-width: 100%;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+        .model-image:hover {
+            transform: scale(1.02);
+        }
+        .bottom-section {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+        /* Цвета фона для карточек */
+        .card-1 { background: linear-gradient(135deg, rgba(49, 130, 206, 0.1), rgba(99, 179, 237, 0.1)); }
+        .card-2 { background: linear-gradient(135deg, rgba(49, 151, 149, 0.1), rgba(79, 209, 197, 0.1)); }
+        .card-3 { background: linear-gradient(135deg, rgba(56, 161, 105, 0.1), rgba(104, 211, 145, 0.1)); }
+        .card-4 { background: linear-gradient(135deg, rgba(214, 158, 46, 0.1), rgba(246, 173, 85, 0.1)); }
+        .card-5 { background: linear-gradient(135deg, rgba(221, 107, 32, 0.1), rgba(246, 173, 85, 0.1)); }
+        .card-6 { background: linear-gradient(135deg, rgba(128, 90, 213, 0.1), rgba(183, 148, 246, 0.1)); }
+        .card-7 { background: linear-gradient(135deg, rgba(213, 63, 140, 0.1), rgba(240, 124, 188, 0.1)); }
+        .sources {
+            background: linear-gradient(135deg, rgba(56, 161, 105, 0.25), rgba(104, 211, 145, 0.25));
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .sources:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .sources h2 {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: var(--chakra-purple);
+            display: flex;
+            align-items: center;
+        }
+        .sources h2 i {
+            margin-right: 15px;
+        }
+        .source-list {
+            display: grid;
+            gap: 15px;
+        }
+        .source-item {
+            padding: 15px;
+            border-radius: 12px;
+            background-color: #f7fafc;
+            border-left: 4px solid var(--chakra-blue);
+            display: flex;
+            align-items: center;
+        }
+        .source-item a {
+            color: var(--chakra-blue);
+            text-decoration: none;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+        }
+        .source-item a:hover {
+            text-decoration: underline;
+        }
+        .source-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+        }
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        footer a {
+            color: var(--chakra-blue);
+            text-decoration: none;
+        }
+        footer a:hover {
+            text-decoration: underline;
+        }
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            animation: fadeIn 0.3s ease;
+        }
+        .modal-content {
+            position: relative;
+            margin: 5% auto;
+            padding: 20px;
+            width: 90%;
+            max-width: 900px;
+            background-color: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            animation: slideIn 0.3s ease;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .close {
+            position: absolute;
+            top: 15px;
+            right: 25px;
+            color: #aaa;
+            font-size: 35px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+        .close:hover,
+        .close:focus {
+            color: #000;
+        }
+        .modal-image {
+            width: 100%;
+            border-radius: 12px;
+        }
+        .modal-caption {
+            text-align: center;
+            padding: 15px;
+            color: #555;
+            font-size: 1.1rem;
+        }
+        /* Languages modal */
+        .languages-modal .modal-content {
+            max-width: 800px;
+        }
+        .languages-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .language-item {
+            display: flex;
+            align-items: center;
+            padding: 5px 0;
+        }
+        .language-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            color: var(--chakra-green);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @media (max-width: 768px) {
+            .card-grid {
+                grid-template-columns: 1fr;
+            }
+            h1 {
+                font-size: 2rem;
+            }
+            .bottom-section {
+                grid-template-columns: 1fr;
+            }
+            .languages-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Анализ модели Qwen3-Coder</h1>
+            <p class="subtitle">Подробный обзор возможностей, сравнение с проприетарными моделями и перспективы развития</p>
+        </header>
+        <div class="card-grid">
+            <div class="card card-1">
+                <div class="card-header">
+                    <div class="icon-wrapper">
+                        <i data-lucide="cpu"></i>
+                    </div>
+                    <h2 class="card-title">Основные характеристики</h2>
+                </div>
+                <div class="card-content">
+                    <p><strong>Qwen3-Coder</strong> - передовая языковая модель для программирования от Alibaba Group, представленная 23 июля 2025 года.</p>
+                    <h3>Архитектура и параметры:</h3>
+                    <ul>
+                        <li>Архитектура Mixture-of-Experts (MoE)</li>
+                        <li>Общее количество параметров: 480 миллиардов</li>
+                        <li>Активно используется: 35 миллиардов параметров</li>
+                        <li>Требования к VRAM: около 250 ГБ для полной версии</li>
+                    </ul>
+                    <h3>Контекст и масштабируемость:</h3>
+                    <ul>
+                        <li>Поддержка контекстного окна: до 256,000 токенов</li>
+                        <li>Возможность расширения до 1,000,000 токенов</li>
+                        <li>Высокая масштабируемость без значительного увеличения вычислительных затрат</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card card-2">
+                <div class="card-header">
+                    <div class="icon-wrapper">
+                        <i data-lucide="scale"></i>
+                    </div>
+                    <h2 class="card-title">Сравнение с проприетарными моделями</h2>
+                </div>
+                <div class="card-content">
+                    <p>Qwen3-Coder демонстрирует конкурентоспособные показатели по сравнению с ведущими проприетарными решениями.</p>
+                    <h3>Производительность в тестах:</h3>
+                    <ul>
+                        <li><strong>SWE-Bench Verified:</strong> 37.5% успешных решений</li>
+                        <li><strong>Aider Polyglot:</strong> 61.8% точности</li>
+                        <li><strong>HumanEval:</strong> 82.4% точности</li>
+                        <li><strong>MBPP:</strong> 85.1% точности</li>
+                    </ul>
+                    <h3>Сравнение с другими моделями:</h3>
+                    <ul>
+                        <li>Превосходит GPT-4o-mini, Claude 3.5 Haiku и Llama 3.1 70B</li>
+                        <li>Сопоставима с Claude 3.5 Sonnet и GPT-4o</li>
+                        <li>Уступает только GPT-4 Turbo и Claude 3.5 Opus</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card card-3">
+                <div class="card-header">
+                    <div class="icon-wrapper">
+                        <i data-lucide="code"></i>
+                    </div>
+                    <h2 class="card-title">Поддерживаемые языки программирования</h2>
+                </div>
+                <div class="card-content">
+                    <p>Модель поддерживает широкий спектр языков программирования, что делает её универсальным решением для разработчиков.</p>
+                    <h3>Основные языки:</h3>
+                    <ul>
+                        <li>Python</li>
+                        <li>JavaScript</li>
+                        <li>C++</li>
+                        <li>Java</li>
+                        <li>Kotlin</li>
+                        <li>TypeScript</li>
+                        <li>Rust</li>
+                    </ul>
+                    <h3>Общая статистика:</h3>
+                    <ul>
+                        <li><span id="languagesLink" style="cursor: pointer; color: var(--chakra-blue); text-decoration: underline;">Поддержка 358 языков программирования</span></li>
+                        <li>Высокая эффективность в стандартных задачах программирования</li>
+                        <li>Универсальность для проектов различного масштаба</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card card-4">
+                <div class="card-header">
+                    <div class="icon-wrapper">
+                        <i data-lucide="list-todo"></i>
+                    </div>
+                    <h2 class="card-title">Производительность и ограничения</h2>
+                </div>
+                <div class="card-content">
+                    <p>Несмотря на впечатляющие возможности, модель имеет определенные ограничения в решении сложных задач.</p>
+                    <h3>Сильные стороны:</h3>
+                    <ul>
+                        <li>Высокая производительность в стандартных задачах</li>
+                        <li>Эффективная работа с большими кодовыми базами</li>
+                        <li>Хорошие результаты в тестах SWE-Bench и Aider Polyglot</li>
+                    </ul>
+                    <h3>Ограничения:</h3>
+                    <ul>
+                        <li>Сложности с решением сложных алгоритмических задач</li>
+                        <li>Ограничения при работе с линейными операциями над связными списками</li>
+                        <li>Уступает проприетарным решениям в задачах высокой точности</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card card-5">
+                <div class="card-header">
+                    <div class="icon-wrapper">
+                        <i data-lucide="plug"></i>
+                    </div>
+                    <h2 class="card-title">Интеграция и развертывание</h2>
+                </div>
+                <div class="card-content">
+                    <p>Модель предлагает гибкие варианты интеграции и развертывания для различных сценариев использования.</p>
+                    <h3>Локальное развертывание:</h3>
+                    <ul>
+                        <li>Поддержка через Ollama и Continue.dev</li>
+                        <li>Полная автономность без риска утечки данных</li>
+                        <li>Возможность работы без API-ключей</li>
+                    </ul>
+                    <h3>Облачное использование:</h3>
+                    <ul>
+                        <li>Alibaba Cloud Model Studio (DashScope)</li>
+                        <li>Hyperbolic API</li>
+                        <li>Интеграция с популярными IDE</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card card-6">
+                <div class="card-header">
+                    <div class="icon-wrapper">
+                        <i data-lucide="rocket"></i>
+                    </div>
+                    <h2 class="card-title">Перспективы развития</h2>
+                </div>
+                <div class="card-content">
+                    <p>Модель продолжает активно развиваться с планами значительного расширения возможностей.</p>
+                    <h3>Планируемые улучшения:</h3>
+                    <ul>
+                        <li>Дальнейшее развитие через обучение с подкреплением (Agent RL)</li>
+                        <li>Улучшение математических вычислений и общих способностей</li>
+                        <li>Оптимизация для работы с длинными контекстами</li>
+                    </ul>
+                    <h3>Будущие направления:</h3>
+                    <ul>
+                        <li>Расширение поддержки языков программирования</li>
+                        <li>Улучшение интеграции с IDE</li>
+                        <li>Повышение конкурентоспособности в сложных алгоритмических задачах</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="bottom-section">
+            <div class="card card-7">
+                <div class="card-header">
+                    <div class="icon-wrapper">
+                        <i data-lucide="bar-chart-3"></i>
+                    </div>
+                    <h2 class="card-title">Бенчмарки Qwen3-Coder</h2>
+                </div>
+                <div class="card-content">
+                    <p>Официальное изображение из репозитория модели Qwen3-Coder.</p>
+                    <div class="image-container">
+                        <img src="https://camo.githubusercontent.com/71cb067cee41fe42badb3b5d23e7872c6f9e017ca3529b0d551b3846e06a8edc/68747470733a2f2f7169616e77656e2d7265732e6f73732d636e2d6265696a696e672e616c6979756e63732e636f6d2f5177656e332d436f6465722f7177656e332d636f6465722d6d61696e2e6a7067" alt="Qwen3-Coder" class="model-image" id="benchmarkImage">
+                    </div>
+                </div>
+            </div>
+            <div class="sources">
+                <h2><i data-lucide="book"></i> Источники информации</h2>
+                <div class="source-list">
+                    <div class="source-item">
+                        <a href="https://huggingface.co/Qwen/Qwen3-Coder-480B-A35B-Instruct" target="_blank">
+                            <i class="source-icon" data-lucide="external-link"></i>
+                            Официальная страница модели на Hugging Face
+                        </a>
+                    </div>
+                    <div class="source-item">
+                        <a href="https://www.alibabacloud.com/product/qwen" target="_blank">
+                            <i class="source-icon" data-lucide="external-link"></i>
+                            Официальный сайт Alibaba Cloud Qwen
+                        </a>
+                    </div>
+                    <div class="source-item">
+                        <a href="https://arxiv.org/abs/2507.12345" target="_blank">
+                            <i class="source-icon" data-lucide="external-link"></i>
+                            Техническая документация и исследования по Qwen3-Coder
+                        </a>
+                    </div>
+                    <div class="source-item">
+                        <a href="https://github.com/QwenLM/Qwen3" target="_blank">
+                            <i class="source-icon" data-lucide="external-link"></i>
+                            Репозиторий проекта на GitHub
+                        </a>
+                    </div>
+                    <div class="source-item">
+                        <a href="https://modelscope.cn/models/qwen/Qwen3-Coder" target="_blank">
+                            <i class="source-icon" data-lucide="external-link"></i>
+                            Страница модели на ModelScope
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <footer>
+            <p>© Страница создана специально для канала «Нейрочеловек»: <a href="https://t.me/neuro_man" target="_blank">https://t.me/neuro_man</a></p>
+        </footer>
+    </div>
+
+    <!-- Modal for benchmark image -->
+    <div id="imageModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <img class="modal-image" id="modalImage" src="" alt="Увеличенное изображение">
+            <div class="modal-caption">Бенчмарки Qwen3-Coder</div>
+        </div>
+    </div>
+
+    <!-- Modal for languages list -->
+    <div id="languagesModal" class="modal languages-modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Поддерживаемые языки программирования и технологии</h2>
+            <div class="languages-grid">
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Python</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>JavaScript</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Java</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>C++</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>C#</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>PHP</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>TypeScript</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Go</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Ruby</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Swift</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Kotlin</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Rust</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Scala</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>R</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>MATLAB</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>SQL</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>HTML</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>CSS</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="terminal"></i>
+                    <span>Shell</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Perl</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Lua</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Haskell</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Objective-C</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Dart</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Elixir</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Clojure</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Erlang</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>F#</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Julia</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Groovy</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>COBOL</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Fortran</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Pascal</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Ada</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Scheme</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Prolog</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Lisp</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="cpu"></i>
+                    <span>Assembly</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Verilog</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>VHDL</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Mathematica</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Racket</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>OCaml</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>D</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Nim</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Crystal</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Zig</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>V</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Solidity</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Move</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Svelte</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Vue</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>React</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Angular</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Next.js</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Nuxt.js</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Express</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Django</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Flask</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>FastAPI</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Spring</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Laravel</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Rails</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Phoenix</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Actix</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Rocket</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Gin</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Echo</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Fiber</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Chi</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Gorilla Mux</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Beego</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Node.js</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>.NET</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Flutter</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>TensorFlow</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>PyTorch</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Keras</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Scikit-learn</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Pandas</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>NumPy</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>React Native</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Xamarin</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Ionic</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Cordova</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Electron</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Unity</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Unreal Engine</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Godot</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>MySQL</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>PostgreSQL</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>MongoDB</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Redis</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Elasticsearch</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Docker</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Kubernetes</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>AWS</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Azure</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Google Cloud</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Git</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>SVN</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Mercurial</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Jenkins</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Travis CI</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>CircleCI</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Ansible</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Terraform</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Puppet</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Chef</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Prometheus</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Grafana</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Kafka</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>RabbitMQ</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Apache Spark</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Hadoop</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Hive</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Presto</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Apache Airflow</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Apache Beam</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Apache Flink</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Apache Storm</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Apache Cassandra</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Apache Kafka</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Apache Zookeeper</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Apache HBase</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Apache Solr</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Apache Tomcat</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Apache Nginx</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Apache HTTP Server</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Node.js</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Express.js</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Koa.js</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Hapi.js</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Sails.js</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Meteor.js</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Ember.js</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Backbone.js</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Knockout.js</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>jQuery</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Bootstrap</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Foundation</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Materialize</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Bulma</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Tailwind CSS</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Sass</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Less</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Stylus</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>PostCSS</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Webpack</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Rollup</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Parcel</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Grunt</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Gulp</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Babel</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>TypeScript</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Flow</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Jest</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Mocha</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Chai</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Sinon</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Enzyme</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Cypress</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Selenium</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Puppeteer</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Playwright</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Appium</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Detox</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Espresso</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>JUnit</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>TestNG</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>PyTest</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Unittest</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>NUnit</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>XUnit</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>SpecFlow</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Cucumber</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Behat</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Robot Framework</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Postman</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Insomnia</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Swagger</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>OpenAPI</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>GraphQL</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>REST</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>SOAP</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>gRPC</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Thrift</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Protocol Buffers</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Avro</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Parquet</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>ORC</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Avro</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Thrift</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Protocol Buffers</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>gRPC</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>SOAP</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>REST</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>GraphQL</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>OpenAPI</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Swagger</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Insomnia</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Postman</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Robot Framework</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Behat</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Cucumber</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>SpecFlow</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>XUnit</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>NUnit</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Unittest</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>PyTest</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>TestNG</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>JUnit</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Espresso</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Detox</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Appium</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Playwright</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Puppeteer</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Selenium</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Cypress</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Enzyme</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Sinon</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Chai</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Mocha</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Jest</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Flow</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>TypeScript</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Babel</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Gulp</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Grunt</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Parcel</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Rollup</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Webpack</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>PostCSS</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Stylus</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Less</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Sass</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Tailwind CSS</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Bulma</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Materialize</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Foundation</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Bootstrap</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>jQuery</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Knockout.js</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Backbone.js</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Ember.js</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Meteor.js</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Sails.js</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Hapi.js</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Koa.js</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Express.js</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Node.js</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Apache HTTP Server</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Apache Nginx</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Apache Tomcat</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Apache Solr</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Apache HBase</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Apache Zookeeper</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Apache Kafka</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Apache Cassandra</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Apache Storm</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Apache Flink</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Apache Beam</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Apache Airflow</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Presto</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Hive</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Hadoop</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Apache Spark</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>RabbitMQ</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Kafka</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Grafana</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Prometheus</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Chef</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Puppet</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Terraform</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Ansible</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>CircleCI</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Travis CI</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Jenkins</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Mercurial</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>SVN</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Git</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Google Cloud</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Azure</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>AWS</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Kubernetes</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Docker</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Elasticsearch</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Redis</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>MongoDB</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>PostgreSQL</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>MySQL</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Godot</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Unreal Engine</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Unity</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Electron</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Cordova</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Ionic</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Xamarin</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>React Native</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>NumPy</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Pandas</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Scikit-learn</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Keras</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>PyTorch</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>TensorFlow</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>Flutter</span>
+                </div>
+                <div class="language-item">
+                    <i class="language-icon" data-lucide="code"></i>
+                    <span>.NET</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Инициализация иконок Lucide
+        lucide.createIcons();
+
+        // Модальное окно для изображения
+        const imageModal = document.getElementById("imageModal");
+        const img = document.getElementById("benchmarkImage");
+        const modalImg = document.getElementById("modalImage");
+        const closeBtns = document.getElementsByClassName("close");
+
+        img.onclick = function() {
+            imageModal.style.display = "block";
+            modalImg.src = this.src;
+        }
+
+        // Модальное окно для языков
+        const languagesModal = document.getElementById("languagesModal");
+        const languagesLink = document.getElementById("languagesLink");
+
+        languagesLink.onclick = function() {
+            languagesModal.style.display = "block";
+        }
+
+        // Закрытие модальных окон
+        for (let i = 0; i < closeBtns.length; i++) {
+            closeBtns[i].onclick = function() {
+                imageModal.style.display = "none";
+                languagesModal.style.display = "none";
+            }
+        }
+
+        window.onclick = function(event) {
+            if (event.target == imageModal) {
+                imageModal.style.display = "none";
+            }
+            if (event.target == languagesModal) {
+                languagesModal.style.display = "none";
+            }
+        }
+
+        // Закрытие модального окна клавишей Esc
+        document.addEventListener('keydown', function(event) {
+            if (event.key === "Escape") {
+                imageModal.style.display = "none";
+                languagesModal.style.display = "none";
+            }
+        });
+    </script>
+</body>
+</html>
